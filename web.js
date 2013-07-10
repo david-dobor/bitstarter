@@ -2,15 +2,18 @@ var express = require('express');
 
 var app = express.createServer(express.logger());
 
+var fs = require('fs');
+
+var buff=new Buffer(fs.readFileSync('index.html', 'utf8', function (err, data) {
+        if (err) throw err;
+        console.log(data);
+        }));
+
 app.get('/', function(request, response) {
-<<<<<<< HEAD
-  response.send('Hello World 2!');
-=======
-  response.send('The first Hello World thing, from the first-or-second lecture');
->>>>>>> 6a4fadd6d205f2600efea597f41c2d5f2950468b
-});
+        response.send(buff.toString());
+    });
 
 var port = process.env.PORT || 5000;
 app.listen(port, function() {
-  console.log("Listening on " + port);
-});
+        console.log("Listening on " + port);
+    });
