@@ -21,11 +21,17 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
 
+
 var fs = require('fs');
+var url = require("url");
 var program = require('commander');
 var cheerio = require('cheerio');
+var rest = require('restler'); 
+var util = require('util');
+
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+//var URL_DEFAULT = url.parse("http://sheltered-earth-6803.herokuapp.com/");
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -42,6 +48,20 @@ var cheerioHtmlFile = function(htmlfile) {
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
+};
+
+
+var makeFileFromURL = function(url, aLocalFile) {
+    rest.get(url).on('complete', function(result) {
+	if (result instanceof Error) {
+	    console.error('Error: ' + result.message);
+	} else {
+            //fs.writeFileSync('url2file.txt', result);
+	    fs.writeFileSync(aLocalFile, result);
+	    //console.error(result);
+	}
+    });
+    return aLocalFile;
 };
 
 var checkHtmlFile = function(htmlfile, checksfile) {
@@ -65,8 +85,26 @@ if(require.main == module) {
     program
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
+        .option('-u, --url <url>', 'Command Line defined URL')
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+
+
+    if (program.url) {
+        //console.log(program.url);
+        var urlAsString = url.format(url.parse(program.url));
+        //console.log(urlAsString);
+	// CREATE A FILE NAMED 'url2file.txt' ON LOCAL SYSTEM BEFORE
+	// RUNNING THIS
+	//assertFileExists('url2file.txt');
+	var urlContents = makeFileFromURL(urlAsString, 'url2file.txt');
+	var checkJson = checkHtmlFile(urlContents, program.checks);
+	//console.log(url.parse(program.url));
+    } else {
+        console.log('no url specified');
+	assertFileExists(HTMLFILE_DEFAULT);
+	var checkJson = checkHtmlFile(program.file, program.checks);
+    }
+
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
